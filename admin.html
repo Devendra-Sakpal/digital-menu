@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Menu Admin Dashboard</title>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .dashboard-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 250px;
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .sidebar-menu { list-style: none; }
+        .sidebar-menu li { margin: 10px 0; }
+
+        .sidebar-menu a {
+            color: #ecf0f1;
+            text-decoration: none;
+            display: block;
+            padding: 15px 20px;
+            transition: 0.3s;
+        }
+
+        .sidebar-menu a:hover,
+        .sidebar-menu a.active {
+            background-color: #34495e;
+        }
+
+        .main-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 20px;
+        }
+
+        .header {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        /* Stats Cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px,1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .stat-number { font-size: 2.4em; font-weight: bold; color: #3498db; }
+        .stat-label { color: #7f8c8d; }
+
+        /* Content Sections */
+        .content-section {
+            background:white;
+            padding:25px;
+            border-radius:10px;
+            margin-bottom:20px;
+            box-shadow:0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .hidden { display: none; }
+
+        .btn {
+            padding: 10px 20px;
+            border:none;
+            border-radius:5px;
+            cursor:pointer;
+            font-size:14px;
+        }
+
+        .btn-primary { background:#3498db; color:white; }
+        .btn-warning { background:#f39c12; color:white; }
+        .btn-danger { background:#e74c3c; color:white; }
+        .btn-success { background:#27ae60; color:white; }
+
+        table { width:100%; border-collapse:collapse; margin-top:15px; }
+        table th, table td {
+            padding:12px;
+            border-bottom:1px solid #ddd;
+        }
+        table th { background:#f8f9fa; }
+
+        .thumb-img {
+            width:45px;
+            height:45px;
+            object-fit:cover;
+            border-radius:6px;
+        }
+
+        /* MODAL FIXED */
+        .modal {
+            display:none;
+            position:fixed;
+            left:0; top:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.5);
+            z-index:10000;
+        }
+
+        .modal-content {
+            background:white;
+            margin:5% auto;
+            padding:25px;
+            width:90%;
+            max-width:500px;
+            border-radius:10px;
+            max-height:90vh;
+            overflow-y:auto;
+            z-index:10001;
+        }
+
+        #itemSubmitBtn { pointer-events:auto; }
+
+        /* FIX BROKEN FORM LAYOUT */
+.form-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    width: 100%;
+}
+
+.form-row .form-group {
+    flex: 1;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+/* STATUS BADGES COLOR */
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-block;
+    text-transform: capitalize;
+}
+
+.status-confirmed { background: #d4edda; color: #155724; } /* available */
+.status-pending { background: #ffeeba; color: #856404; }  /* unavailable */
+.status-completed { background: #cce5ff; color: #004085; }
+
+
+
+    </style>
+</head>
+<body>
+
+<div class="dashboard-container">
+    <div class="sidebar">
+        <h2>Admin Panel</h2>
+        <ul class="sidebar-menu">
+            <li><a href="#" class="nav-link active" data-section="dashboard">Dashboard</a></li>
+            <li><a href="#" class="nav-link" data-section="menu-items">Menu Items</a></li>
+            <li><a href="#" class="nav-link" data-section="orders">Orders</a></li>
+            <li><a href="#" class="nav-link" data-section="payments">Payments</a></li>
+            <li><a href="#" class="nav-link" data-section="reports">Reports</a></li>
+        </ul>
+
+        <button onclick="logout()" style="
+           position:absolute; bottom:20px; left:30%; transform:translateX(-50%);
+           width:50%; padding:12px; border-radius:30px; background:grey; color:black;">
+           Logout
+        </button>
+    </div>
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+
+        <div class="header">
+            <h1>Digital Menu Admin Dashboard</h1>
+            <p>Manage your menu, orders & payments</p>
+        </div>
+
+        <!-- DASHBOARD -->
+        <div id="dashboard" class="content-section">
+            <h2 class="section-title">Dashboard Overview</h2>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalOrders">0</div>
+                    <div class="stat-label">Total Orders</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalRevenue">₹0.00</div>
+                    <div class="stat-label">Total Revenue</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="pendingOrders">0</div>
+                    <div class="stat-label">Pending Orders</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalMenuItems">0</div>
+                    <div class="stat-label">Menu Items</div>
+                </div>
+            </div>
+
+            <h3 style="margin-top:20px;">Recent Orders</h3>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Order #</th>
+                        <th>Customer</th>
+                        <th>Items</th>
+                        <th>Total</th>
+                        <th>Time</th>
+                    </tr>
+                </thead>
+                <tbody id="recentOrdersList"></tbody>
+            </table>
+        </div>
+
+        <!-- MENU ITEMS SECTION -->
+        <div id="menu-items" class="content-section hidden">
+
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h2>Menu Items</h2>
+                <button class="btn btn-primary" onclick="openAddItemModal()">Add Item</button>
+            </div>
+
+            <div style="margin-top:15px;">
+                <select id="categoryFilter" onchange="filterMenuItems()" style="padding:8px; border-radius:5px;">
+                    <option value="">All Categories</option>
+                    <option value="appetizers">Appetizers</option>
+                    <option value="mains">Main Courses</option>
+                    <option value="desserts">Desserts</option>
+                    <option value="beverages">Beverages</option>
+                </select>
+
+                <input type="text" class="search-box" id="menuSearchBox"
+                    placeholder="Search items..." onkeyup="searchMenuItems()">
+            </div>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Image</th>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Description</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="menuItemsList"></tbody>
+            </table>
+        </div>
+
+        <!-- ADD / EDIT ITEM MODAL -->
+        <div id="addItemModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('addItemModal')">&times;</span>
+                <h2 id="itemModalTitle">Add Item</h2>
+
+                <form id="addItemForm">
+                    <input type="hidden" id="editItemId" autocomplete="off">
+
+                    <div class="form-group">
+                        <label>Item Name</label>
+                        <input type="text" id="itemName" required autocomplete="off">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Category</label>
+                            <select id="itemCategory" required autocomplete="off">
+                                <option value="">Select</option>
+                                <option value="appetizers">Appetizers</option>
+                                <option value="mains">Main Courses</option>
+                                <option value="desserts">Desserts</option>
+                                <option value="beverages">Beverages</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Price</label>
+                            <input type="number" id="itemPrice" step="0.01" required autocomplete="off">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Description</label>
+                        <textarea id="itemDescription" required autocomplete="off"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Item Image</label>
+                        <input type="file" id="itemImage" accept="image/*" autocomplete="off">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="itemStatus">
+                            <option value="available">Available</option>
+                            <option value="unavailable">Unavailable</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" id="itemSubmitBtn" class="btn btn-success" style="width:100%; margin-top:10px;">
+                        Save Item
+                    </button>
+                </form>
+            </div>
+        </div>
+        <!-- ORDERS SECTION -->
+        <div id="orders" class="content-section hidden">
+            <h2 class="section-title">Orders</h2>
+
+            <div class="category-filter">
+                <select id="orderStatusFilter" onchange="filterOrders()">
+                    <option value="">All Orders</option>
+                    <option value="pending">Pending</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="completed">Completed</option>
+                </select>
+
+                <input type="text" class="search-box" id="orderSearchBox"
+                       placeholder="Search orders..." onkeyup="searchOrders()">
+            </div>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Order #</th>
+                        <th>Customer</th>
+                        <th>Items</th>
+                        <th>Total</th>
+                        <th>Paid</th>
+                        <th>Balance</th>
+                        <th>Status</th>
+                        <th>Time</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="ordersList"></tbody>
+            </table>
+        </div>
+
+        <!-- PAYMENTS SECTION -->
+        <div id="payments" class="content-section hidden">
+            <h2 class="section-title">Payments</h2>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalPayments">₹0.00</div>
+                    <div class="stat-label">Total Payments</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="pendingPayments">₹0.00</div>
+                    <div class="stat-label">Pending Payments</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="partialPayments">0</div>
+                    <div class="stat-label">Partially Paid</div>
+                </div>
+            </div>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Order #</th>
+                        <th>Customer</th>
+                        <th>Total</th>
+                        <th>Paid</th>
+                        <th>Balance</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="paymentsList"></tbody>
+            </table>
+        </div>
+
+        <!-- REPORTS SECTION -->
+        <div id="reports" class="content-section hidden">
+            <h2 class="section-title">Reports & Analytics</h2>
+            <p>(Static sample data – you can expand this later)</p>
+
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Category</th>
+                        <th>Orders</th>
+                        <th>Revenue</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Burger</td><td>Main</td><td>32</td><td>₹540</td></tr>
+                    <tr><td>Pizza</td><td>Main</td><td>28</td><td>₹620</td></tr>
+                    <tr><td>Cold Coffee</td><td>Beverages</td><td>24</td><td>₹300</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</div>
+
+<!-- FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script>
+/* -----------------------------------------------------------
+   FIREBASE CONFIG
+------------------------------------------------------------*/
+const firebaseConfig = {
+  apiKey: "AIzaSyBgMWguRMslaHVSeiGxRU_cf_NoXYQsnt4",
+  authDomain: "e-menu-c42d6.firebaseapp.com",
+  projectId: "e-menu-c42d6",
+  storageBucket: "e-menu-c42d6.appspot.com",
+  messagingSenderId: "1096213219456",
+  appId: "1:1096213219456:web:93251304cb05fae9b87e65"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+/* Convert file → base64 string */
+function fileToBase64(file) {
+    return new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsDataURL(file);
+    });
+}
+
+/* -----------------------------------------------------------
+   SECURITY: Admin Login Check
+------------------------------------------------------------*/
+if (localStorage.getItem("isAdminLoggedIn") !== "true") {
+    window.location.href = "admin_log.html";
+}
+
+function logout() {
+    localStorage.removeItem("isAdminLoggedIn");
+    window.location.href = "admin_log.html";
+}
+
+/* -----------------------------------------------------------
+   PAGE NAVIGATION
+------------------------------------------------------------*/
+document.addEventListener("DOMContentLoaded", () => {
+    const sections = document.querySelectorAll(".content-section");
+
+    function showSection(id) {
+        sections.forEach(s => s.classList.add("hidden"));
+        document.getElementById(id).classList.remove("hidden");
+    }
+
+    document.querySelectorAll(".nav-link").forEach(link => {
+        link.addEventListener("click", e => {
+            e.preventDefault();
+
+            document.querySelectorAll(".nav-link")
+                .forEach(l => l.classList.remove("active"));
+
+            link.classList.add("active");
+
+            showSection(link.getAttribute("data-section"));
+        });
+    });
+
+    showSection("dashboard");
+
+    startMenuListener();
+    startOrdersListener();
+
+    document.getElementById("addItemForm")
+        .addEventListener("submit", onItemFormSubmit);
+});
+
+/* -----------------------------------------------------------
+   FIRESTORE REALTIME LISTENERS
+------------------------------------------------------------*/
+let menuCache = {};
+let ordersCache = {};
+
+function startMenuListener() {
+    db.collection("menuItems")
+      .orderBy("createdAt", "asc")
+      .onSnapshot(snapshot => {
+        snapshot.docChanges().forEach(change => {
+            const docId = change.doc.id;
+            const data = { _docId: docId, ...change.doc.data() };
+
+            if (change.type === "added" || change.type === "modified") {
+                menuCache[docId] = data;
+            } else if (change.type === "removed") {
+                delete menuCache[docId];
+            }
+        });
+
+        renderMenuItems();
+      });
+}
+
+function startOrdersListener() {
+    db.collection("orders")
+      .orderBy("date", "desc")
+      .onSnapshot(snapshot => {
+        snapshot.docChanges().forEach(change => {
+            const docId = change.doc.id;
+            const data = { _docId: docId, ...change.doc.data() };
+
+            if (change.type === "added" || change.type === "modified") {
+                ordersCache[docId] = data;
+            } else if (change.type === "removed") {
+                delete ordersCache[docId];
+            }
+        });
+
+        renderOrders();
+        renderRecentOrders();
+        renderPayments();
+        updateDashboardStats();
+      });
+}
+
+
+/* -----------------------------------------------------------
+   RENDER MENU ITEMS
+------------------------------------------------------------*/
+function renderMenuItems() {
+    const tbody = document.getElementById("menuItemsList");
+    tbody.innerHTML = "";
+
+    Object.values(menuCache).forEach(item => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${item._docId}</td>
+            <td>${item.imageUrl ? `<img src="${item.imageUrl}" class="thumb-img">` : "-"}</td>
+            <td>${item.name}</td>
+            <td>${item.category}</td>
+            <td>₹${Number(item.price).toFixed(2)}</td>
+            <td>${item.description}</td>
+            <td>
+                <span class="status-badge ${item.status === "available" ? "status-confirmed" : "status-pending"}">
+                    ${item.status}
+                </span>
+            </td>
+            <td>
+                <button class="btn btn-warning" onclick="editMenuItem('${item._docId}')">Edit</button>
+                <button class="btn btn-danger" onclick="deleteMenuItem('${item._docId}')">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+/* -----------------------------------------------------------
+   ADD ITEM
+------------------------------------------------------------*/
+async function addMenuItem() {
+    const file = document.getElementById("itemImage").files[0];
+    const name = itemName.value.trim();
+    const category = itemCategory.value;
+    const price = parseFloat(itemPrice.value);
+    const description = itemDescription.value;
+    const status = itemStatus.value;
+
+    let imageUrl = "";
+    if (file) imageUrl = await fileToBase64(file);
+
+    await db.collection("menuItems").add({
+        name, category, price, description, status,
+        imageUrl,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    closeModal("addItemModal");
+    alert("Item added!");
+}
+
+function openAddItemModal() {
+    document.getElementById("addItemForm").reset();
+
+    editItemId.value = "";
+    itemModalTitle.textContent = "Add Item";
+    itemSubmitBtn.textContent = "Save Item";
+
+    itemImage.value = "";
+
+    openModal("addItemModal");
+}
+
+
+/* -----------------------------------------------------------
+   UPDATE ITEM
+------------------------------------------------------------*/
+function editMenuItem(id) {
+    const item = menuCache[id];
+    if (!item) return;
+
+    editItemId.value = id;
+    itemName.value = item.name;
+    itemCategory.value = item.category;
+    itemPrice.value = item.price;
+    itemDescription.value = item.description;
+    itemStatus.value = item.status;
+
+    itemImage.value = "";
+
+    itemModalTitle.textContent = "Edit Item";
+    itemSubmitBtn.textContent = "Update Item";
+
+    openModal("addItemModal");
+}
+
+async function updateMenuItem(id) {
+    const file = itemImage.files[0];
+    const name = itemName.value.trim();
+    const category = itemCategory.value;
+    const price = parseFloat(itemPrice.value);
+    const description = itemDescription.value;
+    const status = itemStatus.value;
+
+    let imageUrl = menuCache[id].imageUrl;
+    if (file) imageUrl = await fileToBase64(file);
+
+    await db.collection("menuItems").doc(id).update({
+        name, category, price, description, status, imageUrl,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    closeModal("addItemModal");
+    alert("Item updated!");
+}
+
+/* -----------------------------------------------------------
+   ADD / UPDATE FORM HANDLER
+------------------------------------------------------------*/
+async function onItemFormSubmit(e) {
+    e.preventDefault();
+
+    const id = editItemId.value;
+
+    if (id) await updateMenuItem(id);
+    else await addMenuItem();
+}
+
+/* -----------------------------------------------------------
+   DELETE ITEM
+------------------------------------------------------------*/
+async function deleteMenuItem(id) {
+    if (!confirm("Delete item?")) return;
+    await db.collection("menuItems").doc(id).delete();
+}
+
+/* -----------------------------------------------------------
+   ORDERS RENDER
+------------------------------------------------------------*/
+function renderOrders() {
+    const tbody = ordersList;
+    tbody.innerHTML = "";
+
+    Object.values(ordersCache).forEach(order => {
+        const row = document.createElement("tr");
+
+        const items = order.cart
+            ? Object.keys(order.cart).map(i => `${i} × ${order.cart[i].quantity}`).join(", ")
+            : "-";
+
+        const paid = Number(order.partialAmount || 0);
+        const total = Number(order.total || 0);
+        const balance = total - paid;
+
+        row.innerHTML = `
+            <td>${order.orderNumber || order._docId}</td>
+            <td>${order.customerName || "Customer"}</td>
+            <td>${items}</td>
+            <td>₹${total}</td>
+            <td>₹${paid}</td>
+            <td>₹${balance}</td>
+<td>
+    <span class="status-badge ${
+        (order.adminStatus || "pending") === "completed" ? "status-completed" :
+        (order.adminStatus || "pending") === "confirmed" ? "status-confirmed" :
+        "status-pending"
+    }">
+        ${order.adminStatus || "pending"}
+    </span>
+</td>
+            <td>${order.date}</td>
+            <td>
+                <button class="btn btn-success" onclick="updateOrderStatus('${order._docId}','confirmed')">Confirm</button>
+                <button class="btn btn-primary" onclick="updateOrderStatus('${order._docId}','completed')">Complete</button>
+            </td>
+        `;
+
+        tbody.appendChild(row);
+    });
+}
+
+function renderRecentOrders() {
+    const tbody = recentOrdersList;
+    tbody.innerHTML = "";
+
+    Object.values(ordersCache).slice(0, 5).forEach(o => {
+        const items = o.cart
+            ? Object.keys(o.cart).map(i => `${i} × ${o.cart[i].quantity}`).join(", ")
+            : "-";
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${o.orderNumber}</td>
+            <td>${o.customerName || "Customer"}</td>
+            <td>${items}</td>
+            <td>₹${o.total}</td>
+            <td>${o.date}</td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+/* -----------------------------------------------------------
+   UPDATE ORDER STATUS
+------------------------------------------------------------*/
+async function updateOrderStatus(id, status) {
+    await db.collection("orders").doc(id).update({
+        adminStatus: status
+    });
+}
+
+/* -----------------------------------------------------------
+   PAYMENTS RENDER
+------------------------------------------------------------*/
+function renderPayments() {
+    const tbody = paymentsList;
+    tbody.innerHTML = "";
+
+    let totalPayments = 0;
+let pendingPayments = 0;
+let partialPaymentsCount = 0;
+
+
+    Object.values(ordersCache).forEach(order => {
+        const paid = Number(order.partialAmount || 0);
+        const total = Number(order.total || 0);
+        const balance = total - paid;
+
+        totalPayments += paid;
+
+if (balance > 0) {
+    pendingPayments += balance;
+    partialPaymentsCount++;
+}
+
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td>${order.orderNumber}</td>
+            <td>${order.customerName || "Customer"}</td>
+            <td>₹${total}</td>
+            <td>₹${paid}</td>
+            <td>₹${balance}</td>
+<td>
+    <span class="status-badge ${
+        balance > 0 ? "status-pending" : "status-confirmed"
+    }">
+        ${balance > 0 ? "Partial" : "Full"}
+    </span>
+</td>
+            <td>
+                ${balance > 0
+                    ? `<button class="btn btn-success" onclick="collectPayment('${order._docId}')">Collect</button>`
+                    : "Paid"}
+            </td>
+        `;
+
+        tbody.appendChild(row);
+    });
+    document.getElementById("totalPayments").textContent = "₹" + totalPayments.toFixed(2);
+document.getElementById("pendingPayments").textContent = "₹" + pendingPayments.toFixed(2);
+document.getElementById("partialPayments").textContent = partialPaymentsCount;
+
+}
+
+/* -----------------------------------------------------------
+   DASHBOARD CALCULATIONS
+------------------------------------------------------------*/
+function updateDashboardStats() {
+    const orders = Object.values(ordersCache);
+
+    const totalOrders = orders.length;
+
+    const revenue = orders.reduce((sum, o) => sum + Number(o.total || 0), 0);
+
+    const pending = orders.filter(o => (o.adminStatus || "pending") === "pending").length;
+
+    const menuItemsCount = Object.values(menuCache).length;
+
+    document.getElementById("totalOrders").textContent = totalOrders;
+    document.getElementById("totalRevenue").textContent = "₹" + revenue.toFixed(2);
+    document.getElementById("pendingOrders").textContent = pending;
+    document.getElementById("totalMenuItems").textContent = menuItemsCount;
+}
+
+
+/* -----------------------------------------------------------
+   COLLECT PAYMENT
+------------------------------------------------------------*/
+async function collectPayment(id) {
+    const snap = await db.collection("orders").doc(id).get();
+    if (!snap.exists) return;
+
+    const order = snap.data();
+    const paid = Number(order.partialAmount || 0);
+    const total = Number(order.total || 0);
+    const balance = total - paid;
+
+    const amt = parseFloat(prompt(`Remaining ₹${balance}. Enter amount:`));
+    if (!amt || amt <= 0 || amt > balance) return;
+
+    await db.collection("orders").doc(id).update({
+        partialAmount: paid + amt
+    });
+}
+
+/* -----------------------------------------------------------
+   FILTER + SEARCH
+------------------------------------------------------------*/
+function filterMenuItems() {
+    const category = categoryFilter.value;
+    const rows = menuItemsList.querySelectorAll("tr");
+
+    rows.forEach(r => {
+        const cat = r.children[3].textContent;
+        r.style.display = (!category || cat === category) ? "" : "none";
+    });
+}
+
+function searchMenuItems() {
+    const q = menuSearchBox.value.toLowerCase();
+    const rows = menuItemsList.querySelectorAll("tr");
+
+    rows.forEach(r => {
+        const name = r.children[2].textContent.toLowerCase();
+        r.style.display = name.includes(q) ? "" : "none";
+    });
+}
+
+/* -----------------------------------------------------------
+   MODAL OPEN / CLOSE
+------------------------------------------------------------*/
+function openModal(id) {
+    document.getElementById(id).style.display = "block";
+}
+function closeModal(id) {
+    document.getElementById(id).style.display = "none";
+}
+
+window.onclick = e => {
+    document.querySelectorAll(".modal").forEach(m => {
+        if (e.target === m) m.style.display = "none";
+    });
+};
+</script>
+
+</body>
+</html>

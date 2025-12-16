@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Menu - Restaurant</title>
+
+    <!-- ========== CSS INCLUDED (YOUR ORIGINAL DESIGN) ========== -->
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        .container { max-width:1200px; margin:0 auto; padding:20px; }
+        .header { text-align:center; margin-bottom:30px; color:black; }
+        .header h1 { font-size:2.5em; margin-bottom:10px; text-shadow:2px 2px 4px rgba(0,0,0,0.3); }
+        .main-content { display:grid; grid-template-columns:2fr 1fr; gap:30px; align-items:start; }
+        .menu-section, .cart-section {
+            background:white; border-radius:15px; padding:25px;
+            box-shadow:0 10px 30px rgba(0,0,0,0.1);
+        }
+        .cart-section { position:sticky; top:20px; }
+
+        /* Tabs */
+        .category-tabs { display:flex; gap:10px; margin-bottom:25px; flex-wrap:wrap; }
+        .tab-btn {
+            background:#f8f9fa; border:2px solid #e9ecef; padding:12px 20px;
+            border-radius:25px; cursor:pointer; transition:all .3s; font-weight:500;
+        }
+        .tab-btn.active { background:#667eea; color:white; border-color:#667eea; }
+        .tab-btn:hover { transform:translateY(-2px); box-shadow:0 5px 15px rgba(0,0,0,0.1); }
+
+        .category-content { display:none; }
+        .category-content.active { display:block; }
+
+        /* Food Items */
+        .food-item { 
+            display:flex; align-items:center; padding:15px; border:1px solid #e9ecef; 
+            border-radius:10px; margin-bottom:15px; transition:all .3s; 
+        }
+        .food-item:hover { transform:translateY(-3px); box-shadow:0 8px 25px rgba(0,0,0,0.1); }
+        .food-image { 
+            width:80px; height:80px; background:linear-gradient(45deg,#ff6b6b,#ffa726); 
+            border-radius:10px; display:flex; align-items:center; justify-content:center; 
+            color:white; font-size:24px; margin-right:15px; 
+        }
+        .food-details { flex:1; }
+        .food-name { font-size:18px; font-weight:600; margin-bottom:5px; }
+        .food-description { color:#666; font-size:14px; margin-bottom:8px; }
+        .food-price { font-size:16px; font-weight:700; color:#667eea; }
+
+        .add-btn {
+            background:#28a745; color:white; border:none; padding:10px 20px;
+            border-radius:25px; cursor:pointer; font-weight:500; transition:all .3s;
+        }
+        .add-btn:hover { background:#218838; transform:scale(1.05); }
+
+        /* Cart */
+        .cart-header { display:flex; justify-content:space-between; align-items:center;
+            margin-bottom:20px; padding-bottom:15px; border-bottom:2px solid #e9ecef; }
+        .cart-title { font-size:24px; font-weight:600; color:#333; }
+        .cart-count {
+            background:#667eea; color:white; border-radius:50%; width:30px; height:30px;
+            display:flex; align-items:center; justify-content:center; font-weight:600;
+        }
+
+        .cart-item { display:flex; justify-content:space-between; padding:12px 0;
+            border-bottom:1px solid #f0f0f0; }
+        .cart-item:last-child{ border-bottom:none; }
+
+        .quantity-controls { display:flex; gap:10px; align-items:center; }
+        .qty-btn {
+            background:#667eea; color:white; border:none; width:25px; height:25px;
+            border-radius:50%; cursor:pointer; font-size:16px;
+        }
+
+        /* Totals */
+        .total-row { display:flex; justify-content:space-between; margin-bottom:10px; }
+        .total-row.final { font-size:18px; font-weight:700; color:#667eea; padding-top:10px; }
+
+        /* Payment */
+        .payment-section { padding:20px; background:#f8f9fa; border-radius:10px; margin-top:20px; }
+        .partial-payment { margin-top:15px; padding:15px; background:#fff3cd; border-radius:8px; }
+
+        /* Buttons */
+        .place-order-btn {
+            width:100%; background:#28a745; color:white; padding:15px;
+            border:none; border-radius:10px; font-size:18px; font-weight:600;
+            cursor:pointer; margin-top:20px;
+        }
+
+        /* Modals */
+        .bill-modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+            background:rgba(0,0,0,0.8); z-index:1000; }
+        .bill-content {
+            position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+            background:white; padding:30px; border-radius:15px; width:90%; max-width:500px;
+        }
+
+        .history-buttons button {
+            position:fixed; right:20px; padding:10px 15px; border:none; border-radius:8px;
+            background:#007bff; color:white; cursor:pointer;
+        }
+        .history-buttons button:nth-child(1){ bottom:70px; }
+        .history-buttons button:nth-child(2){ bottom:20px; }
+
+         @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .cart-section {
+                position: static;
+            }
+        }
+
+    </style>
+
+<!---------Razorpay script--------->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>🍽️ Digital Menu</h1>
+            <p>Delicious food at your fingertips</p>
+        </div>
+
+        <div class="main-content">
+
+            <!-- ========== MENU (EMPTY → JS FILLS FROM FIREBASE) ========== -->
+            <div class="menu-section">
+                <div class="category-tabs">
+                    <button class="tab-btn active" onclick="showCategory('appetizers')">🥗 Appetizers</button>
+                    <button class="tab-btn" onclick="showCategory('mains')">🍖 Main Course</button>
+                    <button class="tab-btn" onclick="showCategory('desserts')">🍰 Desserts</button>
+                    <button class="tab-btn" onclick="showCategory('beverages')">🥤 Beverages</button>
+                </div>
+
+                <div id="appetizers" class="category-content active"></div>
+                <div id="mains" class="category-content"></div>
+                <div id="desserts" class="category-content"></div>
+                <div id="beverages" class="category-content"></div>
+            </div>
+
+            <!-- ========== CART ========== -->
+            <div class="cart-section">
+                <div class="cart-header">
+                    <h2 class="cart-title">Your Cart</h2>
+                    <div id="cartCount" class="cart-count">0</div>
+                </div>
+
+                <div id="cartItems" class="empty-cart">
+                    <p>Your cart is empty</p>
+                    <p>Add some delicious items!</p>
+                </div>
+
+                <div id="cartTotal" class="cart-total" style="display:none;">
+                    <div class="total-row final">
+                        <span>Total:</span>
+                        <span id="total">₹0</span>
+                    </div>
+                </div>
+
+                <div id="paymentSection" class="payment-section" style="display:none;">
+                    <h3 class="payment-title">Payment Options</h3>
+
+                    <label><input type="radio" id="fullPayment" name="payment" checked> Full Payment</label><br>
+                    <label><input type="radio" id="partialPayment" name="payment"> Partial Payment</label>
+
+                    <div id="partialPaymentDiv" class="partial-payment" style="display:none;">
+                        <p><strong>Minimum 30% required</strong></p>
+                        <input id="partialAmount" type="number" class="partial-amount">
+                        <p id="partialError" style="color:red;display:none;"></p>
+                    </div>
+                </div>
+
+                <button id="placeOrderBtn" class="place-order-btn" disabled onclick="placeOrder()">Place Order</button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ========== PAYMENT GATEWAY MODAL (ORIGINAL) ========== -->
+<div id="paymentGatewayModal" class="bill-modal">
+  <div class="bill-content" style="max-width:450px; padding:25px; border-radius:15px;">
+    
+    <button class="close-btn" onclick="closePaymentGatewayIfPresent()" 
+        style="position:absolute; right:15px; top:15px; font-size:22px; background:none; border:none; cursor:pointer;">×</button>
+
+    <h2 style="text-align:center; margin-bottom:10px;">💳 Payment Gateway</h2>
+    <p style="text-align:center; opacity:0.8;">Please fill the details to proceed</p>
+
+    <label><strong>Customer Name:</strong></label>
+    <input id="customerName" name="cust_name_fake"  type="text" autocomplete="off" placeholder="Enter full name"
+      style="width:100%; padding:10px; margin:8px 0; border:1px solid #ccc; border-radius:8px;" required>
+
+    <label><strong>Contact Number:</strong></label>
+    <input id="contactNumber" name="mobile_fake_field" type="text" autocomplete="off" placeholder="Enter mobile number" oninput="this.value=this.value.slice(0,10)" required
+      style="width:100%; padding:10px; margin:8px 0; border:1px solid #ccc; border-radius:8px;">
+
+    <label><strong>Table Number:</strong></label>
+    <input id="tableNumber" name="table_no_fake" type="text" autocomplete="off" placeholder="Enter table number"
+      style="width:100%; padding:10px; margin:8px 0; border:1px solid #ccc; border-radius:8px;" required>
+
+    <label><strong>Payment Method:</strong></label>
+    <select id="paymentMethod"
+      style="width:100%; padding:10px; margin:8px 0; border:1px solid #ccc; border-radius:8px;">
+        <option value="upi">UPI</option>
+        <option value="card">Card</option>
+        <option value="cash">Cash</option>
+    </select>
+
+    <button id="confirmPaymentBtn"
+      style="width:100%; padding:12px; margin-top:15px; background:#28a745; color:white; border:none;
+            border-radius:10px; font-size:18px; cursor:pointer;">
+        Confirm & Pay
+    </button>
+
+  </div>
+</div>
+
+
+    <!-- ========== BILL MODAL ========== -->
+   <div id="billModal" class="bill-modal">
+    <div class="bill-content" style="max-width:500px; padding:25px; border-radius:15px;">
+        
+        <button class="close-btn" onclick="closeBill()" 
+            style="position:absolute; right:15px; top:15px; font-size:22px; background:none; border:none; cursor:pointer;">
+            ×
+        </button>
+
+        <h2 style="text-align:center; margin-bottom:10px;">Order Bill</h2>
+
+        <p><strong>Order #:</strong> <span id="orderNumber"></span></p>
+        <p><strong>Name:</strong> <span id="billCustomerName"></span></p>
+        <p><strong>Contact:</strong> <span id="billContactNumber"></span></p>
+        <p><strong>Table:</strong> <span id="billTableNumber"></span></p>
+
+        <div id="billDetails" style="margin-top:15px; font-size:15px;"></div>
+
+        <button id="downloadBillBtn"
+            style="width:100%; padding:12px; margin-top:20px; background:#28a745; color:white; border:none; 
+                   border-radius:10px; font-size:18px; cursor:pointer;">
+            Download Bill
+        </button>
+    </div>
+</div>
+
+
+    <!-- ========== ORDER HISTORY MODAL ========== -->
+    <div id="orderHistoryModal" class="bill-modal">
+        <div class="bill-content">
+            <button class="close-btn" onclick="closeOrderHistory()">×</button>
+            <h2>Order History</h2>
+            <div id="orderHistoryList" style="max-height:350px;overflow-y:auto;"></div>
+        </div>
+    </div>
+
+    <!-- ========== HISTORY BUTTONS ========== -->
+    <div class="history-buttons">
+        <button onclick="viewPreviousOrder()">📄 View Previous Order</button>
+        <button onclick="openOrderHistory()">📘 Order History</button>
+    </div>
+
+    <!-- ========== JS LIBRARIES ========== -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- Firebase libraries -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyBgMWguRMslaHVSeiGxRU_cf_NoXYQsnt4",
+    authDomain: "e-menu-c42d6.firebaseapp.com",
+    projectId: "e-menu-c42d6",
+    storageBucket: "e-menu-c42d6.appspot.com",
+    messagingSenderId: "1096213219456",
+    appId: "1:1096213219456:web:93251304cb05fae9b87e65"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+  const storage = firebase.storage();
+</script>
+
+
+    <!-- ========== YOUR EXTERNAL JS FILE (MAIN LOGIC) ========== -->
+    <script src="E-Menu.js"></script>
+
+</body>
+</html>
