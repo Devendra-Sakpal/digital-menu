@@ -903,7 +903,37 @@ window.onclick = e => {
         if (e.target === m) m.style.display = "none";
     });
 };
+
+//order fillter
+function filterOrders() {
+    const selectedStatus = document.getElementById("orderStatusFilter").value;
+    const rows = document.querySelectorAll("#ordersList tr");
+
+    rows.forEach(row => {
+        const statusBadge = row.querySelector(".status-badge");
+        if (!statusBadge) return;
+
+        const statusText = statusBadge.textContent.trim().toLowerCase();
+
+        if (selectedStatus === "" || statusText === selectedStatus) {
+            row.style.display = "";
+        } else {
+            row.style.display = "none";
+        }
+    });
+}
+
+function searchOrders() {
+    const query = document.getElementById("orderSearchBox").value.toLowerCase();
+    const rows = document.querySelectorAll("#ordersList tr");
+
+    rows.forEach(row => {
+        const rowText = row.textContent.toLowerCase();
+        row.style.display = rowText.includes(query) ? "" : "none";
+    });
+}
 </script>
 
 </body>
 </html>
+
